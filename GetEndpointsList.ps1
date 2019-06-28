@@ -18,6 +18,12 @@ $auth_endpoint = $url + "/v1/Auth"
 
 $json = $login | ConvertTo-Json
 
-$access = Invoke-RestMethod -Method POST -ContentType 'application/json' -Uri $auth_endpoint -Body $json
-
-Write-Output($access)
+try
+{
+    $result = Invoke-WebRequest -Method POST -ContentType 'application/json' -Uri $auth_endpoint -Body $json
+    Write-Output($result.StatusCode)
+}
+catch
+{
+    Write-Output($_.Exception.Response.StatusCode.value__)
+}

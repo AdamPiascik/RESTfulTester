@@ -39,7 +39,7 @@ foreach($line in $endpointList){
                 Write-Host -n ("Request Parameters: ")
                 if ($parameters) { Write-Host ($parameters)} else { Write-Host ("None") }
                 Write-Host ("Errors:")
-                $errors.PSObject.Properties | foreach-object {
+                $errors.PSObject.Properties | ForEach-Object {
                     $name = $_.Name 
                     $value = $_.value
                     Write-Host("`t`t$name : $value")

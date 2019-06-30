@@ -13,28 +13,30 @@ foreach($test in $testcsv){
    
     $auth_endpoint = "https://psycruitclient-api.dev.avamae.co.uk" + $endpoint
 
+    $contentType = "application/json"
+
     $headers = @{"IsTestData"=1}
     if ($accesstoken) {$headers.Add("Authorization", $accesstoken)}
 
     try {
-        $result = Invoke-WebRequest -Method $method -ContentType 'application/json' -Uri $auth_endpoint -Headers $headers
+        $response = Invoke-WebRequest -Method $method -ContentType $contentType -Uri $auth_endpoint -Headers $headers
     }
     catch {
         $bAllTestPassed = 1
-        $e = $_.Exception.Response
-        Write-Host -NoNewline ("Test of ")
-        Write-Host -NoNewline -ForegroundColor Yellow ($endpoint)
+
+        $res = $_.Exception.Response
+
+        Write-Host -NoNewline ("`nTest of ")
+        Write-Host -NoNewline -ForegroundColor Red ($endpoint)
         Write-Host(" failed; "`
                     + "here are some (hopefully!) helpful "`
                     + "details:`n")
-        Write-Host -NoNewline ("Method: "); Write-Host -ForegroundColor Yellow ($e.Method)
-        Write-Host -NoNewline ("Error Code: "); Write-Host -ForegroundColor Yellow ($e.StatusCode.value__.ToString() + " - " + $e.StatusCode)
+        Write-Host -NoNewline ("Method: "); Write-Host ($res.Method)
+        Write-Host -NoNewline ("Error Code: "); Write-Host -ForegroundColor Red ($res.StatusCode.value__.ToString() + " - " + $res.StatusCode)
         Write-Host -NoNewline ("Access token: ")
         if ($accesstoken) { Write-Host ($accesstoken) } else { Write-Host ("None") }
-        Write-Host -NoNewline ("Parameters: ")
+        Write-Host -NoNewline ("Request Parameters: ")
         if ($parameters) { Write-Host ($parameters)} else { Write-Host ("None") }
         Write-Host $("-" * 40)
     }
 }
-
-if ($bAllTestPassed = 1) { exit 0 } else { exit 1 }

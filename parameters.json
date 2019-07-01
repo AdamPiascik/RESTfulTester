@@ -1,0 +1,34 @@
+{
+  "/api/v1/publicrole/cmsmodule/cmsdetails":
+  {
+    "cmsName" : "csr"
+  },
+  "/api/v1/email/contactus":
+  {
+    "name": "Adam Piascik",
+    "email": "adam.piascik@avamae.co.uk",
+    "phone": "0123456789",
+    "company": "Test",
+    "message": "Test",
+    "interests": ["Test"]
+  },
+  "/api/v1/email/makeanenquiry":
+  {
+    "name": "Adam Piascik",
+    "email": "adam.piascik@avamae.co.uk",
+    "phone": "01234 56789",
+    "url": "Test"
+  },
+  "/api/v1/publicrole/newsblogsmodule/newsblogsdetails":
+  {
+    "newsBlogsCode" : "NB1003"
+  },
+  "/api/v1/publicrole/roomsmodule/roomdetails":
+  {
+    "roomsName" : "Create@"
+  },
+  "/api/v1/publicrole/servicesmodule/servicesdetails":
+  {
+    "servicesName" : "Catering"
+  }
+}

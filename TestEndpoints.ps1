@@ -38,7 +38,11 @@ function Get-AllAccessTokens {
             $jsonData.PSObject.Properties | ForEach-Object {
                 if ($_.Name -eq $auth) {
                     $loginDetails = $_Value | ConvertTo-Json
-                    $response = Invoke-RestMethod -Method POST -Uri ($baseurl + $_.Name) -Body ($_.Value|ConvertTo-Json) -ContentType "application/json"
+                    $response = Invoke-RestMethod `
+                                -Method POST `
+                                -Uri ($baseurl + $_.Name) `
+                                -Body ($_.Value|ConvertTo-Json) `
+                                -ContentType "application/json"
                     $accessTokens.Add($_.Name, $response."access_token")
                 }
             }
@@ -88,7 +92,7 @@ $swaggerDoc."paths".PSObject.Properties | ForEach-Object {
     $endpoint = $_.Name
     $_.Value.PSObject.Properties | ForEach-Object {
         $method = $_.Name
-        $contentType = "application/json"
+        $contentType = If ($_.Value.consumes) {$_.Value.consumes} else {""}
         $parameters = Get-EndpointParameters $endpoint $parametersList
         if ($method -ieq "POST") {
             $parameters = $parameters | ConvertTo-Json
@@ -98,37 +102,48 @@ $swaggerDoc."paths".PSObject.Properties | ForEach-Object {
             $token = Get-AccessTokenForEndpoint $_.Value.description $accesstokens
         } catch { }
 
+        $headers = @{}
+        $headers.Add("IsTestData", 1)
+        $headers.Add("Authorization", $token)
+
         try {
-            $response = Invoke-WebRequest -Method $method -ContentType $contentType -Uri ($baseurl + $endpoint) -Body $parameters
+            $response = Invoke-WebRequest -Method $method `
+                                        -ContentType $contentType `
+                                        -Uri ($baseurl + $endpoint) `
+                                        -Body $parameters `
+                                        -Headers $headers
             $responseContentType = $response.Headers["content-type"]
             if ($responseContentType -like "*application/json*") {
                 $body = ConvertFrom-Json -InputObject $response
                 if ($body."errors".Count -eq 0) {
-                    Write-Host -n ("`nTest of ")
-                    Write-Host -n -f Green ($endpoint); Write-Host (" succeeded.")
-                    Write-Host ($separator)
+                    Write-Host -n "`nTest of "
+                    Write-Host -n -f Green $endpoint; Write-Host " succeeded."
+                    Write-Host $separator
                 }
                 else {
                     $bAllTestPassed = 0
-                    Write-Host -n ("Test of ")
-                    Write-Host -n -f Yellow ($endpoint); Write-Host (" returned a successful status code, but there were errors in the JSON response body:`n")
+                    Write-Host -n "Test of "
+                    Write-Host -n -f Yellow $endpoint
+                    Write-Host " returned a successful status code, 
+                                but there were errors in the JSON response body:`n"
                     $errors = $body."errors"[0]
-                    Write-Host -n ("Method: "); Write-Host ($method.ToUpper())
-                    Write-Host -n ("Request Parameters: ")
-                    if ($parameters) { Write-Host ($parameters)} else { Write-Host ("None") }
-                    Write-Host ("Errors:")
+                    Write-Host -n "Method: "; Write-Host $method.ToUpper()
+                    Write-Host -n "Request Parameters: "
+                    if ($parameters) {Write-Host $parameters}
+                    else {Write-Host "None"}
+                    Write-Host "Errors:"
                     $errors.PSObject.Properties | ForEach-Object {
                         $name = $_.Name
                         $value = $_.value
-                        Write-Host("`t`t$name : $value")
+                        Write-Host"`t`t$name : $value"
                     }
-                    Write-Host ($separator)
+                    Write-Host $separator
                 }
             }
             else {
-                Write-Host -n ("Test of ")
-               Write-Host -n -f Green ($endpoint); Write-Host (" succeeded.")
-               Write-Host ($separator)
+                Write-Host -n "Test of "
+               Write-Host -n -f Green $endpoint; Write-Host " succeeded."
+               Write-Host $separator
             }
         }
         catch {
@@ -136,18 +151,18 @@ $swaggerDoc."paths".PSObject.Properties | ForEach-Object {
 
             $res = $_.Exception.Response
 
-            Write-Host -n ("Test of ")
-            Write-Host -n -f Yellow ($endpoint)
-            Write-Host(" failed; "`
+            Write-Host -n "Test of "
+            Write-Host -n -f Yellow $endpoint
+            Write-Host "failed; "`
                         + "here are some (hopefully!) helpful "`
-                        + "details:`n")
-            Write-Host -n ("Method: "); Write-Host ($res.Method)
-            Write-Host -n ("Error Code: "); Write-Host -f Yellow ($res.StatusCode.value__.ToString() + " - " + $res.StatusCode)
-            Write-Host -n ("Access token: ")
-            if ($accesstoken) { Write-Host ($accesstoken) } else { Write-Host ("None") }
-            Write-Host -n ("Request Parameters: ")
-            if ($parameters) { Write-Host ($parameters)} else { Write-Host ("None") }
-            Write-Host ($separator)
+                        + "details:`n"
+            Write-Host -n "Method: "; Write-Host $res.Method
+            Write-Host -n "Error Code: "; Write-Host -f Yellow $res.StatusCode.value__.ToString() + " - " + $res.StatusCode
+            Write-Host -n "Access token: "
+            if ($accesstoken) { Write-Host $accesstoken } else { Write-Host "None" }
+            Write-Host -n "Request Parameters: "
+            if ($parameters) { Write-Host $parameters} else { Write-Host "None" }
+            Write-Host $separator
         }
     }
 }
@@ -156,12 +171,12 @@ $swaggerDoc."paths".PSObject.Properties | ForEach-Object {
 ###############################################################################
 
 if ($bAllTestPassed) {
-    Write-Host -f Green ("-----TESTING PASSED-----")
-    Write-Host ("All endpoints seem to be responding properly!")
+    Write-Host -f Green "-----TESTING PASSED-----"
+    Write-Host "All endpoints seem to be responding properly!"
     exit 0
 }
 else {
-    Write-Host -f Yellow ("-----TESTING FAILED-----")
-    Write-Host ("One or more endpoints aren't working correctly (see test results above).")
+    Write-Host -f Yellow "-----TESTING FAILED-----"
+    Write-Host "One or more endpoints aren't working correctly; see test results above."
     exit 1
 }
